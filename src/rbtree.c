@@ -5,8 +5,13 @@
 rbtree *new_rbtree(void)
 {
   rbtree *p = (rbtree *)calloc(1, sizeof(rbtree));
-  p->root = NULL;
-  p->nil = NULL;
+  p->nil = malloc(sizeof(node_t));
+  p->nil->color = RBTREE_BLACK;
+  p->nil->key = -1;
+  p->nil->left = NULL;
+  p->nil->right = NULL;
+  p->nil->parent = NULL;
+  p->root = p->nil;
   return p;
 }
 
@@ -36,11 +41,18 @@ node_t *left_spin(node_t *parentNode)
  * 그래프를 회전한다.
  * parent: 회전의 주체 노드(기준점)
  * isLeft: 왼쪽으로 직선되어 있는지
- * return값은 가장 높은 노드
+ * return값은 가장 높은 노드(root와 근접한 노드)
  */
 node_t *spin(node_t *parentNode, int isLeft)
 {
   return isLeft ? left_spin(parentNode) : right_spin(parentNode);
+}
+
+void color_switch(node_t *t1, node_t *t2)
+{
+  color_t tmpColor = t2->color;
+  t2->color = t1->color;
+  t1->color = tmpColor;
 }
 
 node_t *rbtree_insert(rbtree *t, const key_t key)
@@ -50,27 +62,33 @@ node_t *rbtree_insert(rbtree *t, const key_t key)
   newNode->key = key;
   newNode->left = t->nil;
   newNode->right = t->nil;
-  newNode->parent = NULL;
+  newNode->parent = t->nil;
 
   // 맨 처음 넣는 경우
-  if (t->root == NULL)
+  if (t->root == t->nil)
   {
     newNode->color = RBTREE_BLACK;
     t->root = newNode;
     return t->root;
   }
-
+  // Node를 삽입한다.
   node_t *targetNode = t->root;
   while (targetNode != t->nil)
   {
-    if (targetNode->key > key)
-      targetNode = targetNode->right;
-    else
-      targetNode = targetNode->left;
     newNode->parent = targetNode;
+    if (key < targetNode->key)
+      targetNode = targetNode->left;
+    else
+      targetNode = targetNode->right;
   }
+  if (key < newNode->parent->key)
+    newNode->parent->left = newNode;
+    else
+    newNode->parent->right = newNode;
+
   targetNode = newNode;
-  while (targetNode->parent->color != RBTREE_RED)
+  // 재 정렬
+  while (targetNode->parent->color == RBTREE_RED)
   {
     node_t *parentNode = targetNode->parent;
     node_t *grandParentNode = parentNode->parent;
@@ -114,6 +132,8 @@ node_t *rbtree_find(const rbtree *t, const key_t key)
     else
       targetNode = targetNode->left;
   }
+  if (targetNode == t->nil)
+    return NULL;
   return targetNode;
 }
 
