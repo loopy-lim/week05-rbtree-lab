@@ -55,7 +55,7 @@ node_t *rbtree_insert(rbtree *t, const key_t key)
   }
 
   node_t *targetNode = t->root;
-  while (targetNode == t->nil)
+  while (targetNode != t->nil)
   {
     if (targetNode->key > key)
       targetNode = targetNode->right;
@@ -64,7 +64,7 @@ node_t *rbtree_insert(rbtree *t, const key_t key)
     newNode->parent = targetNode;
   }
   targetNode = newNode;
-  while (targetNode->parent->color == RBTREE_RED)
+  while (targetNode->parent->color != RBTREE_RED)
   {
     node_t *parentNode = targetNode->parent;
     node_t *grandParentNode = parentNode->parent;
@@ -100,8 +100,15 @@ node_t *rbtree_insert(rbtree *t, const key_t key)
 
 node_t *rbtree_find(const rbtree *t, const key_t key)
 {
-  // TODO: implement find
-  return t->root;
+  node_t *targetNode = t->root;
+  while (targetNode != t->nil && targetNode->key != key)
+  {
+    if (targetNode->key > key)
+      targetNode = targetNode->right;
+    else
+      targetNode = targetNode->left;
+  }
+  return targetNode;
 }
 
 node_t *rbtree_min(const rbtree *t)
