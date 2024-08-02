@@ -16,25 +16,31 @@ void delete_rbtree(rbtree *t)
   free(t);
 }
 
-node_t *right_spin(node_t *self)
+node_t *right_spin(node_t *parentNode)
 {
-  node_t *parentNode = self->parent, *grandParentNode = parentNode->parent;
-  grandParentNode->right = parentNode->left;
-  parentNode->left = grandParentNode;
-  return parentNode;
+  node_t *leftNode = parentNode->left;
+  parentNode->left = leftNode->right;
+  leftNode->right = parentNode;
+  return leftNode;
 }
 
-node_t *left_spin(node_t *self)
+node_t *left_spin(node_t *parentNode)
 {
-  node_t *parentNode = self->parent, *grandParentNode = parentNode->parent;
-  grandParentNode->left = parentNode->right;
-  parentNode->right = grandParentNode;
-  return parentNode;
+  node_t *rightNode = parentNode->right;
+  parentNode->right = rightNode->left;
+  rightNode->left = parentNode;
+  return rightNode;
 }
 
-node_t *spin(node_t *self, int isLeft)
+/**
+ * 그래프를 회전한다.
+ * parent: 회전의 주체 노드(기준점)
+ * isLeft: 왼쪽으로 직선되어 있는지
+ * return값은 가장 높은 노드
+ */
+node_t *spin(node_t *parentNode, int isLeft)
 {
-  return isLeft ? left_spin(self) : right_spin(self);
+  return isLeft ? left_spin(parentNode) : right_spin(parentNode);
 }
 
 node_t *rbtree_insert(rbtree *t, const key_t key)
