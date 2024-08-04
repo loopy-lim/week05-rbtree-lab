@@ -24,6 +24,9 @@ void delete_rbtree(rbtree *t)
 node_t *right_spin(node_t *parentNode)
 {
   node_t *leftNode = parentNode->left;
+  leftNode->parent = parentNode->parent;
+  parentNode->parent->right = leftNode;
+  parentNode->parent = leftNode;
   parentNode->left = leftNode->right;
   leftNode->right = parentNode;
   return leftNode;
@@ -32,6 +35,9 @@ node_t *right_spin(node_t *parentNode)
 node_t *left_spin(node_t *parentNode)
 {
   node_t *rightNode = parentNode->right;
+  rightNode->parent = parentNode->parent;
+  parentNode->parent->left = rightNode;
+  parentNode->parent = rightNode;
   parentNode->right = rightNode->left;
   rightNode->left = parentNode;
   return rightNode;
@@ -83,7 +89,7 @@ node_t *rbtree_insert(rbtree *t, const key_t key)
   }
   if (key < newNode->parent->key)
     newNode->parent->left = newNode;
-    else
+  else
     newNode->parent->right = newNode;
 
   targetNode = newNode;
@@ -102,19 +108,18 @@ node_t *rbtree_insert(rbtree *t, const key_t key)
       parentNode->color = RBTREE_BLACK;
       grandParentNode->color = RBTREE_RED;
       targetNode = grandParentNode;
-      continue;
     }
     else
     {
-      int isCurve = targetNode == (isUncleLeftNode ? grandParentNode->right->left : grandParentNode->left->right);
+      int isCurve = isUncleLeftNode
+                        ? grandParentNode->right->left == targetNode
+                        : grandParentNode->left->right == targetNode;
       if (isCurve)
       {
-        spin(targetNode, !isUncleLeftNode);
+        parentNode = spin(parentNode, !isUncleLeftNode);
       }
-      color_t tmpColor = parentNode->color;
-      parentNode->color = grandParentNode->color;
-      grandParentNode->color = tmpColor;
-      targetNode = grandParentNode;
+      color_switch(parentNode, grandParentNode);
+      targetNode = spin(grandParentNode, isUncleLeftNode);
     }
   }
   t->root->color = RBTREE_BLACK;
