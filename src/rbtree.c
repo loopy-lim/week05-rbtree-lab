@@ -21,37 +21,57 @@ void delete_rbtree(rbtree *t)
   free(t);
 }
 
-node_t *right_spin(node_t *parentNode)
+node_t *right_spin(rbtree *t, node_t *parentNode, int isGrandParentLeftNode)
 {
   node_t *leftNode = parentNode->left;
+  if (t->root == parentNode)
+    t->root = leftNode;
+
   leftNode->parent = parentNode->parent;
-  parentNode->parent->right = leftNode;
-  parentNode->parent = leftNode;
+  if (isGrandParentLeftNode)
+    parentNode->parent->left = leftNode;
+  else
+    parentNode->parent->right = leftNode;
+
   parentNode->left = leftNode->right;
+  parentNode->left->parent = leftNode;
+
+  parentNode->parent = leftNode;
   leftNode->right = parentNode;
   return leftNode;
 }
 
-node_t *left_spin(node_t *parentNode)
+node_t *left_spin(rbtree *t, node_t *parentNode, int isGrandParentLeftNode)
 {
   node_t *rightNode = parentNode->right;
+  if (t->root == parentNode)
+    t->root = rightNode;
+
   rightNode->parent = parentNode->parent;
-  parentNode->parent->left = rightNode;
-  parentNode->parent = rightNode;
+  if (isGrandParentLeftNode)
+    parentNode->parent->left = rightNode;
+  else
+    parentNode->parent->right = rightNode;
+
   parentNode->right = rightNode->left;
+  parentNode->right->parent = rightNode;
+
+  parentNode->parent = rightNode;
   rightNode->left = parentNode;
   return rightNode;
 }
 
 /**
  * 그래프를 회전한다.
+ * t: rbtree입니다.
  * parent: 회전의 주체 노드(기준점)
  * isLeft: 왼쪽으로 직선되어 있는지
  * return값은 가장 높은 노드(root와 근접한 노드)
  */
-node_t *spin(node_t *parentNode, int isLeft)
+node_t *spin(rbtree *t, node_t *parentNode, int isLeft)
 {
-  return isLeft ? left_spin(parentNode) : right_spin(parentNode);
+  int isGrandParentLeftNode = parentNode->parent->left == parentNode;
+  return isLeft ? left_spin(t, parentNode, isGrandParentLeftNode) : right_spin(t, parentNode, isGrandParentLeftNode);
 }
 
 void color_switch(node_t *t1, node_t *t2)
@@ -116,10 +136,10 @@ node_t *rbtree_insert(rbtree *t, const key_t key)
                         : grandParentNode->left->right == targetNode;
       if (isCurve)
       {
-        parentNode = spin(parentNode, !isUncleLeftNode);
+        parentNode = spin(t, parentNode, !isUncleLeftNode);
       }
       color_switch(parentNode, grandParentNode);
-      targetNode = spin(grandParentNode, isUncleLeftNode);
+      targetNode = spin(t, grandParentNode, isUncleLeftNode)->parent;
     }
   }
   t->root->color = RBTREE_BLACK;
@@ -144,14 +164,18 @@ node_t *rbtree_find(const rbtree *t, const key_t key)
 
 node_t *rbtree_min(const rbtree *t)
 {
-  // TODO: implement find
-  return t->root;
+  node_t *minNode = t->root;
+  while (minNode->left != t->nil)
+    minNode = minNode->left;
+  return minNode;
 }
 
 node_t *rbtree_max(const rbtree *t)
 {
-  // TODO: implement find
-  return t->root;
+  node_t *maxNode = t->root;
+  while (maxNode->right != t->nil)
+    maxNode = maxNode->right;
+  return maxNode;
 }
 
 int rbtree_erase(rbtree *t, node_t *p)
