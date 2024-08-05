@@ -8,9 +8,7 @@ rbtree *new_rbtree(void)
   p->nil = malloc(sizeof(node_t));
   p->nil->color = RBTREE_BLACK;
   p->nil->key = -1;
-  p->nil->left = NULL;
-  p->nil->right = NULL;
-  p->nil->parent = NULL;
+
   p->root = p->nil;
   return p;
 }
@@ -21,7 +19,7 @@ void delete_rbtree(rbtree *t)
   free(t);
 }
 
-node_t *right_spin(rbtree *t, node_t *parentNode, int isGrandParentLeftNode)
+node_t *right_spin(rbtree *t, node_t *parentNode, const int isGrandParentLeftNode)
 {
   node_t *leftNode = parentNode->left;
   if (t->root == parentNode)
@@ -29,19 +27,20 @@ node_t *right_spin(rbtree *t, node_t *parentNode, int isGrandParentLeftNode)
 
   leftNode->parent = parentNode->parent;
   if (isGrandParentLeftNode)
-    parentNode->parent->left = leftNode;
+    leftNode->parent->left = leftNode;
   else
-    parentNode->parent->right = leftNode;
+    leftNode->parent->right = leftNode;
 
   parentNode->left = leftNode->right;
-  parentNode->left->parent = leftNode;
+  parentNode->left->parent = parentNode;
 
   parentNode->parent = leftNode;
   leftNode->right = parentNode;
+
   return leftNode;
 }
 
-node_t *left_spin(rbtree *t, node_t *parentNode, int isGrandParentLeftNode)
+node_t *left_spin(rbtree *t, node_t *parentNode, const int isGrandParentLeftNode)
 {
   node_t *rightNode = parentNode->right;
   if (t->root == parentNode)
@@ -49,15 +48,16 @@ node_t *left_spin(rbtree *t, node_t *parentNode, int isGrandParentLeftNode)
 
   rightNode->parent = parentNode->parent;
   if (isGrandParentLeftNode)
-    parentNode->parent->left = rightNode;
+    rightNode->parent->left = rightNode;
   else
-    parentNode->parent->right = rightNode;
+    rightNode->parent->right = rightNode;
 
   parentNode->right = rightNode->left;
-  parentNode->right->parent = rightNode;
+  parentNode->right->parent = parentNode;
 
   parentNode->parent = rightNode;
   rightNode->left = parentNode;
+
   return rightNode;
 }
 
@@ -68,7 +68,7 @@ node_t *left_spin(rbtree *t, node_t *parentNode, int isGrandParentLeftNode)
  * isLeft: 왼쪽으로 직선되어 있는지
  * return값은 가장 높은 노드(root와 근접한 노드)
  */
-node_t *spin(rbtree *t, node_t *parentNode, int isLeft)
+node_t *spin(rbtree *t, node_t *parentNode, const int isLeft)
 {
   int isGrandParentLeftNode = parentNode->parent->left == parentNode;
   return isLeft ? left_spin(t, parentNode, isGrandParentLeftNode) : right_spin(t, parentNode, isGrandParentLeftNode);
@@ -114,7 +114,7 @@ node_t *rbtree_insert(rbtree *t, const key_t key)
 
   targetNode = newNode;
   // 재 정렬
-  while (targetNode->parent->color == RBTREE_RED)
+  while (targetNode != t->nil && targetNode->parent->color == RBTREE_RED)
   {
     node_t *parentNode = targetNode->parent;
     node_t *grandParentNode = parentNode->parent;
@@ -184,8 +184,18 @@ int rbtree_erase(rbtree *t, node_t *p)
   return 0;
 }
 
+int inorder(const rbtree *t, const node_t *node, key_t *arr, int deps)
+{
+  if (node != t->nil)
+  {
+    deps = inorder(t, node->left, arr, deps);
+    arr[deps++] = node->key;
+    deps = inorder(t, node->right, arr, deps);
+  }
+  return deps;
+}
+
 int rbtree_to_array(const rbtree *t, key_t *arr, const size_t n)
 {
-  // TODO: implement to_array
-  return 0;
+  return inorder(t, t->root, arr, 0);
 }
