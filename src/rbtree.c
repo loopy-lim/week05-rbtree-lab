@@ -13,27 +13,42 @@ rbtree *new_rbtree(void)
   return p;
 }
 
+void postOrderDelete(const rbtree *t, node_t *node)
+{
+  if (node != t->nil)
+  {
+    postOrderDelete(t, node->left);
+    postOrderDelete(t, node->right);
+    free(node);
+  }
+}
+
 void delete_rbtree(rbtree *t)
 {
-  // TODO: reclaim the tree nodes's memory
+  postOrderDelete(t, t->root);
+  free(t->nil);
   free(t);
 }
 
 node_t *right_spin(rbtree *t, node_t *parentNode, const int isGrandParentLeftNode)
 {
+  // 바꾸는 노드가 root 인 경우
   node_t *leftNode = parentNode->left;
   if (t->root == parentNode)
     t->root = leftNode;
 
+  // leftNode 부모
   leftNode->parent = parentNode->parent;
   if (isGrandParentLeftNode)
     leftNode->parent->left = leftNode;
   else
     leftNode->parent->right = leftNode;
 
+  // leftNode의 자식을 parentNode로
   parentNode->left = leftNode->right;
   parentNode->left->parent = parentNode;
 
+  // parentNode와 leftNode간의 부모 자식 결과 교환
   parentNode->parent = leftNode;
   leftNode->right = parentNode;
 
@@ -42,19 +57,23 @@ node_t *right_spin(rbtree *t, node_t *parentNode, const int isGrandParentLeftNod
 
 node_t *left_spin(rbtree *t, node_t *parentNode, const int isGrandParentLeftNode)
 {
+  // 바꾸는 노드가 root 인 경우
   node_t *rightNode = parentNode->right;
   if (t->root == parentNode)
     t->root = rightNode;
 
+  // rightNode 부모
   rightNode->parent = parentNode->parent;
   if (isGrandParentLeftNode)
     rightNode->parent->left = rightNode;
   else
     rightNode->parent->right = rightNode;
 
+  // rightNode의 자식을 parentNode로
   parentNode->right = rightNode->left;
   parentNode->right->parent = parentNode;
 
+  // parentNode와 rightNode간의 부모 자식 결과 교환
   parentNode->parent = rightNode;
   rightNode->left = parentNode;
 
@@ -122,7 +141,7 @@ node_t *rbtree_insert(rbtree *t, const key_t key)
     int isUncleLeftNode = grandParentNode->left != parentNode;
     node_t *uncleNode = isUncleLeftNode ? grandParentNode->left : grandParentNode->right;
 
-    if (uncleNode->color == RBTREE_RED)
+    if (uncleNode->color == RBTREE_RED) // case 1
     {
       uncleNode->color = RBTREE_BLACK;
       parentNode->color = RBTREE_BLACK;
@@ -134,11 +153,11 @@ node_t *rbtree_insert(rbtree *t, const key_t key)
       int isCurve = isUncleLeftNode
                         ? grandParentNode->right->left == targetNode
                         : grandParentNode->left->right == targetNode;
-      if (isCurve)
+      if (isCurve) // case 2
       {
         parentNode = spin(t, parentNode, !isUncleLeftNode);
       }
-      color_switch(parentNode, grandParentNode);
+      color_switch(parentNode, grandParentNode); // case 3
       targetNode = spin(t, grandParentNode, isUncleLeftNode)->parent;
     }
   }
