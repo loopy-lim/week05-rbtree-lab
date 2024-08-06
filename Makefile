@@ -16,7 +16,6 @@ debug:
 debug: ## for vscode debug
 	$(MAKE) -C src clean
 	$(MAKE) -C test clean
-	$(MAKE) -C src
 	${MAKE} -C test debug
 
 clean:
